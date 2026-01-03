@@ -1,0 +1,35 @@
+{% extends "core/base.html" %}
+{% block title %}{{ coop.name }} - TaavonYar{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card">
+      {% if coop.image %}
+        <img src="{{ coop.image.url }}" class="card-img-top" alt="{{ coop.name }}">
+      {% endif %}
+      <div class="card-body">
+        <h1 class="h4 mb-1">{{ coop.name }}</h1>
+        <div class="text-muted">{{ coop.village }}</div>
+        <hr>
+        <div>Price/share: <span class="fw-semibold">{{ coop.price_per_share }}</span> Tooman</div>
+        <div>Total shares: <span class="fw-semibold">{{ coop.total_shares }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h5">About</h2>
+        <p class="mb-0">{{ coop.description|linebreaks }}</p>
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <a class="btn btn-outline-dark" href="/projects/?coop={{ coop.id }}">View projects</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -10,6 +10,7 @@
       <div class="list-group-item">
         <div class="d-flex justify-content-between align-items-center">
           <div>
+            <a class="fw-semibold text-decoration-none" href="{% url 'coop_detail' coop.id %}">{{ coop.name }}</a>
             <div class="fw-semibold">{{ coop.name }}</div>
             <div class="text-muted small">{{ coop.village }}</div>
           </div>

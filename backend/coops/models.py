@@ -5,6 +5,8 @@ class Cooperative(models.Model):
     village = models.CharField(max_length=200, blank=True)
 
     description = models.TextField(blank=True)
+    image = models.ImageField(upload_to="coops/", null=True, blank=True)
+
 
     # Share policy (Tooman)
     price_per_share = models.PositiveBigIntegerField(default=0)

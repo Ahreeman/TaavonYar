@@ -1,0 +1,29 @@
+{% extends "core/base.html" %}
+{% block title %}Projects - TaavonYar{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Projects</h1>
+
+{% if projects %}
+  <div class="list-group">
+    {% for p in projects %}
+      <a class="list-group-item list-group-item-action" href="{% url 'project_detail' p.id %}">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="fw-semibold">{{ p.title }}</div>
+            <div class="text-muted small">{{ p.cooperative.name }}</div>
+          </div>
+          <div class="text-end small">
+            <div>Status: <span class="fw-semibold">{{ p.status }}</span></div>
+            {% if p.is_fully_funded %}
+              <div class="badge text-bg-success">Fully Funded</div>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-info">No projects yet.</div>
+{% endif %}
+{% endblock %}
