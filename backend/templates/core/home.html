@@ -1,0 +1,35 @@
+{% extends "core/base.html" %}
+{% block title %}TaavonYar{% endblock %}
+
+{% block content %}
+<div class="p-4 p-md-5 mb-4 rounded text-bg-light border">
+  <div class="col-lg-8 px-0">
+    <h1 class="display-6">TaavonYar</h1>
+    <p class="lead my-3">
+      A cooperative platform for villages: support projects and trade shares with transparency.
+    </p>
+    <p class="mb-0">
+      <a href="/coops/" class="btn btn-dark">Browse cooperatives</a>
+    </p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Support projects</h5>
+        <p class="card-text">Contribute Tooman to cooperative projects and receive shares when projects are done.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Trade shares</h5>
+        <p class="card-text">Buy shares from cooperatives or other shareholders at the cooperative’s fixed price.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "core/base.html" %}
+{% block title %}Cooperatives - TaavonYar{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Cooperatives</h1>
+
+{% if coops %}
+  <div class="list-group">
+    {% for coop in coops %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold">{{ coop.name }}</div>
+            <div class="text-muted small">{{ coop.village }}</div>
+          </div>
+          <div class="text-end small">
+            <div>Price/share: <span class="fw-semibold">{{ coop.price_per_share }}</span> Tooman</div>
+            <div>Total shares: <span class="fw-semibold">{{ coop.total_shares }}</span></div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-info">No cooperatives yet. Add one in Admin.</div>
+{% endif %}
+{% endblock %}
