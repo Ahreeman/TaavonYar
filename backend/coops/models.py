@@ -11,6 +11,7 @@ class Cooperative(models.Model):
     # Share policy (Tooman)
     price_per_share = models.PositiveBigIntegerField(default=0)
     total_shares = models.PositiveIntegerField(default=0)
+    available_primary_shares = models.PositiveIntegerField(default=0)
 
     # Optional presentation fields
     website = models.URLField(blank=True)

@@ -1,0 +1,107 @@
+{% extends "core/base.html" %}
+{% block title %}Marketplace - TaavonYar{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-3">Marketplace</h1>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="h6">Filter by Cooperative</h2>
+        <form method="get" action="{% url 'marketplace' %}">
+          <select class="form-select mb-2" name="coop">
+            <option value="">All cooperatives</option>
+            {% for c in coops %}
+              <option value="{{ c.id }}" {% if selected_coop_id == c.id|stringformat:"s" %}selected{% endif %}>
+                {{ c.name }}
+              </option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-outline-dark w-100" type="submit">Apply</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="h6">Buy from Cooperative (Primary)</h2>
+        <form method="post" action="{% url 'buy_primary' %}">
+          {% csrf_token %}
+          <label class="form-label">Cooperative</label>
+          <select class="form-select mb-2" name="coop_id" required>
+            {% for c in coops %}
+              <option value="{{ c.id }}">{{ c.name }} (available {{ c.available_primary_shares }})</option>
+            {% endfor %}
+          </select>
+
+          <label class="form-label">Quantity</label>
+          <input class="form-control mb-2" type="number" name="quantity" min="1" required>
+
+          <button class="btn btn-dark w-100" type="submit">Buy (fixed coop price)</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6">Sell Shares (Create Listing)</h2>
+        <form method="post" action="{% url 'create_listing' %}">
+          {% csrf_token %}
+          <label class="form-label">Cooperative</label>
+          <select class="form-select mb-2" name="coop_id" required>
+            {% for c in coops %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+
+          <label class="form-label">Quantity</label>
+          <input class="form-control mb-2" type="number" name="quantity" min="1" required>
+
+          <button class="btn btn-outline-dark w-100" type="submit">Create Listing</button>
+        </form>
+
+        <div class="text-muted small mt-2">
+          Marketplace price is always the cooperative’s price_per_share.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6">Active Listings</h2>
+
+        {% if listings %}
+          <div class="list-group">
+            {% for l in listings %}
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                  <div>
+                    <div class="fw-semibold">{{ l.cooperative.name }}</div>
+                    <div class="text-muted small">
+                      Seller: {{ l.seller.username }} • Available: <b>{{ l.quantity_available }}</b> •
+                      Price/share: <b>{{ l.cooperative.price_per_share }}</b> Tooman
+                    </div>
+                  </div>
+
+                  <div class="text-end">
+                    <form method="post" action="{% url 'buy_listing' l.id %}" class="d-flex gap-2">
+                      {% csrf_token %}
+                      <input class="form-control form-control-sm" style="width: 110px" type="number" name="quantity" min="1" max="{{ l.quantity_available }}" required>
+                      <button class="btn btn-sm btn-dark" type="submit">Buy</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="alert alert-info mb-0">No active listings.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "core/base.html" %}
+{% block title %}Board Dashboard - TaavonYar{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-3">Board Dashboard</h1>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <div>
+        <div class="fw-semibold">{{ coop.name }}</div>
+        <div class="text-muted small">{{ coop.village }}</div>
+        <a class="btn btn-sm btn-outline-dark" href="/coops/board/edit/">Edit cooperative</a>
+      </div>
+      <div class="text-end small">
+        <div>Price/share: <b>{{ coop.price_per_share }}</b> Tooman</div>
+        <div>Total shares: <b>{{ coop.total_shares }}</b></div>
+        <div>Available for sale: <b>{{ coop.available_primary_shares }}</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2 class="h6">Projects</h2>
+{% if projects %}
+  <div class="list-group">
+    {% for p in projects %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <div class="fw-semibold">
+              <a class="text-decoration-none" href="{% url 'project_detail' p.id %}">{{ p.title }}</a>
+            </div>
+            <div class="text-muted small">Status: {{ p.status }} {% if p.is_fully_funded %} • <span class="badge text-bg-success">Fully Funded</span>{% endif %}</div>
+          </div>
+
+          <div class="text-end">
+            {% if p.status != "DONE" %}
+              <form method="post" action="{% url 'project_mark_done' p.id %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-dark" type="submit">Mark Done & Distribute</button>
+              </form>
+            {% else %}
+              <span class="badge text-bg-secondary">DONE</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-info">No projects yet.</div>
+{% endif %}
+{% endblock %}

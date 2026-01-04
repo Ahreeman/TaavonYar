@@ -14,22 +14,67 @@
         <hr>
         <div>Price/share: <span class="fw-semibold">{{ coop.price_per_share }}</span> Tooman</div>
         <div>Total shares: <span class="fw-semibold">{{ coop.total_shares }}</span></div>
+        <div>Available (primary): <span class="fw-semibold">{{ coop.available_primary_shares }}</span></div>
+
+        <div class="d-grid gap-2 mt-3">
+          <a class="btn btn-outline-dark" href="/projects/?coop={{ coop.id }}">View projects</a>
+          <a class="btn btn-dark" href="/shares/marketplace/?coop={{ coop.id }}">Buy/Sell shares</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body">
+        <h2 class="h6 mb-2">Stats</h2>
+        <div class="small">Shareholders: <b>{{ shareholder_count }}</b></div>
+        <div class="small">Total contributions: <b>{{ total_contributions }}</b> Tooman</div>
       </div>
     </div>
   </div>
 
   <div class="col-md-8">
-    <div class="card">
+    <div class="card mb-3">
       <div class="card-body">
         <h2 class="h5">About</h2>
         <p class="mb-0">{{ coop.description|linebreaks }}</p>
       </div>
     </div>
 
-    <div class="mt-3">
-      <a class="btn btn-outline-dark" href="/projects/?coop={{ coop.id }}">View projects</a>
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="h6">Active Projects</h2>
+        {% if active_projects %}
+          <div class="list-group">
+            {% for p in active_projects %}
+              <a class="list-group-item list-group-item-action" href="/projects/{{ p.id }}/">
+                <div class="fw-semibold">{{ p.title }}</div>
+                <div class="text-muted small">Goal: {{ p.goal_amount }} Tooman • Shares: {{ p.shares_to_distribute }}</div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-muted small">No active projects.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6">Done Projects</h2>
+        {% if done_projects %}
+          <div class="list-group">
+            {% for p in done_projects %}
+              <a class="list-group-item list-group-item-action" href="/projects/{{ p.id }}/">
+                <div class="fw-semibold">{{ p.title }}</div>
+                <div class="text-muted small">DONE</div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-muted small">No done projects.</div>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>
 {% endblock %}
-

@@ -17,10 +17,32 @@
     </button>
 
     <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="/coops/">Cooperatives</a></li>
-        <li class="nav-item"><a class="nav-link" href="/admin/">Admin</a></li>
-      </ul>
+    <ul class="navbar-nav ms-auto">
+      <li class="nav-item"><a class="nav-link" href="/coops/">Cooperatives</a></li>
+      <li class="nav-item"><a class="nav-link" href="/projects/">Projects</a></li>
+
+      {% if user.is_authenticated %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:dashboard' %}">Dashboard</a>
+        </li>
+
+        {% if user.individual and user.individual.board_profile and user.individual.shareholder_profile %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:choose_dashboard' %}">Switch</a>
+          </li>
+        {% endif %}
+
+        <li class="nav-item">
+          <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+            {% csrf_token %}
+            <button class="btn btn-link nav-link" type="submit">Logout</button>
+          </form>
+        </li>
+      {% else %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
+      {% endif %}
+
+      <li class="nav-item"><a class="nav-link" href="/admin/">Admin</a></li>
+    </ul>
+
     </div>
   </div>
 </nav>

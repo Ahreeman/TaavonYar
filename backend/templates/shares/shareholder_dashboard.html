@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+{% block title %}Shareholder Dashboard - TaavonYar{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-3">Shareholder Dashboard</h1>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6">My Portfolio</h2>
+        {% if holdings %}
+          <div class="list-group">
+            {% for h in holdings %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-semibold">{{ h.cooperative.name }}</div>
+                  <div class="text-muted small">Price/share: {{ h.cooperative.price_per_share }} Tooman</div>
+                </div>
+                <div class="text-end">
+                  <div class="fw-semibold">{{ h.quantity }} shares</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="alert alert-info mb-0">You don’t own any shares yet.</div>
+        {% endif %}
+        <div class="mt-3">
+          <a class="btn btn-outline-dark" href="{% url 'marketplace' %}">Go to Marketplace</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6">My Contributions (latest 20)</h2>
+        {% if contributions %}
+          <div class="list-group">
+            {% for c in contributions %}
+              <div class="list-group-item">
+                <div class="fw-semibold">{{ c.project.title }}</div>
+                <div class="text-muted small">
+                  {{ c.project.cooperative.name }} • {{ c.amount }} Tooman
+                  {% if c.allocated_shares != None %}
+                    • Allocated shares: <b>{{ c.allocated_shares }}</b>
+                  {% else %}
+                    • <i>Waiting for project to be Done</i>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="alert alert-info mb-0">No contributions yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

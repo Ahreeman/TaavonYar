@@ -88,3 +88,42 @@ def buy_from_listing(*, listing: ShareListing, buyer, quantity: int) -> ShareTra
         total_price=total_price,
     )
     return trade
+
+
+@transaction.atomic
+def buy_primary_shares_from_coop(*, coop: Cooperative, buyer, quantity: int) -> ShareTrade:
+    """
+    Buy shares directly from cooperative if it has available_primary_shares.
+    Price is always coop.price_per_share.
+    Money is abstracted (we just record the trade).
+    """
+    if quantity <= 0:
+        raise ValueError("Quantity must be > 0")
+
+    coop = Cooperative.objects.select_for_update().get(id=coop.id)
+
+    if coop.available_primary_shares < quantity:
+        raise ValueError("Cooperative does not have enough shares available for sale")
+
+    # Decrease coop available shares
+    coop.available_primary_shares = F("available_primary_shares") - quantity
+    coop.save(update_fields=["available_primary_shares"])
+    coop.refresh_from_db()
+
+    # Increase buyer holding
+    buyer_holding = _get_holding(coop, buyer)
+    buyer_holding.quantity = F("quantity") + quantity
+    buyer_holding.save(update_fields=["quantity"])
+
+    price_per_share = coop.price_per_share
+    total_price = price_per_share * quantity
+
+    trade = ShareTrade.objects.create(
+        cooperative=coop,
+        buyer=buyer,
+        seller=None,  # None means cooperative primary sale
+        quantity=quantity,
+        price_per_share=price_per_share,
+        total_price=total_price,
+    )
+    return trade
