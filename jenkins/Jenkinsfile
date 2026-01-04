@@ -8,6 +8,7 @@ pipeline {
 
     stage('Build') {
       steps {
+        sh 'pwd && ls -la /app | head -n 50 && ls -la /app/manage.py'
         sh 'ls -la'
         sh 'ls -la backend | head -n 50'
         sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml build --no-cache'
