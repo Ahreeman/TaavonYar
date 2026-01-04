@@ -8,22 +8,23 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'docker compose build'
+        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml build'
       }
     }
 
     stage('Test') {
       steps {
-        sh 'docker compose up -d'
-        sh 'docker compose exec -T web pytest --cov=.'
+        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d'
+        // run tests inside the running web container
+        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T web pytest --cov=.'
       }
     }
   }
 
   post {
     always {
-      sh 'docker compose logs --no-color'
-      sh 'docker compose down -v'
+      sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --no-color'
+      sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v'
     }
   }
 }
