@@ -26,7 +26,8 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
     volumes:
-      - ./backend:/app
+      - ./:/app
+    working_dir: /app/backend
     ports:
       - "8000:8000"
     depends_on:
