@@ -81,27 +81,35 @@
                     <td class="text-end">{{ r.coop.price_per_share }}</td>
                     <td class="text-end">{{ r.primary }}</td>
                     <td class="text-end">{{ r.secondary }}</td>
-                    <td class="text-end fw-semibold">{{ r.total }}</td>
+                    <td class="text-end fw-semibold">{{ r.total_for_buyer }}</td>
                     <td>
-                      {% if r.total > 0 %}
+                      {% if r.total_for_buyer > 0 %}
                         <form method="post" action="{% url 'shares:buy_marketplace' %}" class="d-flex gap-2 align-items-center">
-                          {% csrf_token %}
-                          <input type="hidden" name="coop_id" value="{{ r.coop.id }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="coop_id" value="{{ r.coop.id }}">
 
-                          <select class="form-select form-select-sm" name="source" style="width: 140px;">
-                            <option value="auto" selected>Auto</option>
-                            <option value="primary">Primary</option>
-                            <option value="secondary">Secondary</option>
-                          </select>
+                            <select class="form-select form-select-sm" name="source" style="width: 140px;">
+                              <option value="auto" selected>Auto</option>
 
-                          <input class="form-control form-control-sm" style="width: 90px;" type="number" name="quantity" min="1" max="{{ r.total }}" required>
+                              <option value="primary"
+                                      {% if r.primary == 0 %}disabled{% endif %}>
+                                Primary{% if r.primary == 0 %} (none){% endif %}
+                              </option>
 
-                          <button class="btn btn-sm btn-dark" type="submit">Buy</button>
+                              <option value="secondary"
+                                      {% if r.secondary == 0 %}disabled{% endif %}>
+                                Secondary{% if r.secondary == 0 %} (none){% endif %}
+                              </option>
+                            </select>
+
+                            <input class="form-control form-control-sm" style="width: 90px;"
+                                  type="number" name="quantity" min="1" max="{{ r.total_for_buyer }}" required>
+
+                            <button class="btn btn-sm btn-dark" type="submit">Buy</button>
                         </form>
-
-                      {% else %}
-                        <span class="text-muted small">No shares available</span>
-                      {% endif %}
+                        {% else %}
+                          <span class="text-muted small">No shares available</span>
+                        {% endif %}
                     </td>
                   </tr>
                 {% endfor %}

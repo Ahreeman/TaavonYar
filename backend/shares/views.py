@@ -29,19 +29,20 @@ def shareholder_dashboard(request):
     )
 
 
-@login_required
+login_required
 def marketplace(request):
     coop_id = request.GET.get("coop")
     coops_qs = Cooperative.objects.order_by("name")
     if coop_id:
         coops_qs = coops_qs.filter(id=coop_id)
 
-    # Sum active listings by coop (do NOT reveal sellers)
-    listing_totals = {
+    # Secondary availability EXCLUDING buyer’s own listings
+    secondary_totals = {
         row["cooperative_id"]: int(row["total"] or 0)
         for row in (
             ShareListing.objects
             .filter(status=ShareListing.Status.ACTIVE)
+            .exclude(seller=request.user)
             .values("cooperative_id")
             .annotate(total=Sum("quantity_available"))
         )
@@ -49,19 +50,23 @@ def marketplace(request):
 
     rows = []
     for c in coops_qs:
-        secondary = listing_totals.get(c.id, 0)
         primary = int(c.available_primary_shares)
+        secondary = secondary_totals.get(c.id, 0)
         rows.append({
             "coop": c,
             "primary": primary,
-            "secondary": secondary,
-            "total": primary + secondary,
+            "secondary": secondary,                 # already excludes buyer listings
+            "total_for_buyer": primary + secondary, # total buyer can purchase via auto
         })
 
     return render(
         request,
         "shares/marketplace.html",
-        {"rows": rows, "all_coops": Cooperative.objects.order_by("name"), "selected_coop_id": coop_id},
+        {
+            "rows": rows,
+            "all_coops": Cooperative.objects.order_by("name"),
+            "selected_coop_id": coop_id,
+        },
     )
 
 
