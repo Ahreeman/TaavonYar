@@ -5,7 +5,7 @@ from django.contrib import messages
 from coops.models import Cooperative
 from projects.models import Contribution
 from .models import ShareHolding, ShareListing, ShareTrade
-from .services import create_listing as svc_create_listing, buy_from_listing, buy_primary_shares_from_coop
+from .services import create_listing as svc_create_listing, buy_from_listing, buy_primary_shares_from_coop, buy_from_marketplace
 
 
 @login_required
@@ -32,16 +32,36 @@ def shareholder_dashboard(request):
 @login_required
 def marketplace(request):
     coop_id = request.GET.get("coop")
-    coops = Cooperative.objects.order_by("name")
-
-    listings = ShareListing.objects.select_related("cooperative", "seller").filter(status=ShareListing.Status.ACTIVE)
+    coops_qs = Cooperative.objects.order_by("name")
     if coop_id:
-        listings = listings.filter(cooperative_id=coop_id)
+        coops_qs = coops_qs.filter(id=coop_id)
+
+    # Sum active listings by coop (do NOT reveal sellers)
+    listing_totals = {
+        row["cooperative_id"]: int(row["total"] or 0)
+        for row in (
+            ShareListing.objects
+            .filter(status=ShareListing.Status.ACTIVE)
+            .values("cooperative_id")
+            .annotate(total=Sum("quantity_available"))
+        )
+    }
+
+    rows = []
+    for c in coops_qs:
+        secondary = listing_totals.get(c.id, 0)
+        primary = int(c.available_primary_shares)
+        rows.append({
+            "coop": c,
+            "primary": primary,
+            "secondary": secondary,
+            "total": primary + secondary,
+        })
 
     return render(
         request,
         "shares/marketplace.html",
-        {"coops": coops, "listings": listings.order_by("-created_at"), "selected_coop_id": coop_id},
+        {"rows": rows, "all_coops": Cooperative.objects.order_by("name"), "selected_coop_id": coop_id},
     )
 
 
@@ -172,3 +192,25 @@ def my_trades(request):
         "shares/my_trades.html",
         {"trades_bought": trades_bought, "trades_sold": trades_sold},
     )
+
+@login_required
+def buy_marketplace(request):
+    if request.method != "POST":
+        return redirect("shares:marketplace")
+
+    coop_id = int(request.POST.get("coop_id", "0") or "0")
+    qty = int(request.POST.get("quantity", "0") or "0")
+    coop = get_object_or_404(Cooperative, id=coop_id)
+
+    if qty <= 0:
+        messages.error(request, "Quantity must be at least 1.")
+        return redirect(f"/shares/marketplace/?coop={coop.id}")
+
+    try:
+        trades = buy_from_marketplace(coop=coop, buyer=request.user, quantity=qty)
+        total = sum(t.total_price for t in trades)
+        messages.success(request, f"Purchase successful. Total cost: {total} Tooman.")
+    except Exception as e:
+        messages.error(request, f"Could not buy shares: {e}")
+
+    return redirect(f"/shares/marketplace/?coop={coop.id}")

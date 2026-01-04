@@ -28,7 +28,7 @@ def contribute(request, project_id: int):
     if request.method == "POST":
         amount = int(request.POST.get("amount", "0") or "0")
         contribute_to_project(project=project, user=request.user, amount=amount)
-    return redirect("project_detail", project_id=project.id)
+    return redirect("projects:project_detail", project_id=project.id)
 
 
 def _require_board_member(user) -> BoardMember:
@@ -62,7 +62,7 @@ def board_dashboard(request):
 @login_required
 def mark_done(request, project_id: int):
     if request.method != "POST":
-        return redirect("project_detail", project_id=project_id)
+        return redirect("projects:project_detail", project_id=project_id)
 
     try:
         board = _require_board_member(request.user)
