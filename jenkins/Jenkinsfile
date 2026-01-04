@@ -1,0 +1,32 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Build') {
+      steps {
+        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml build --no-cache'
+      }
+    }
+
+    stage('Test') {
+      steps {
+        // Start DB only
+        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d db'
+
+        // Run tests as a one-off container (no need for web to stay running)
+        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm web'
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --no-color || true'
+      sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v || true'
+    }
+  }
+}

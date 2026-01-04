@@ -1,0 +1,5 @@
+services:
+  web:
+    volumes: []        # don't mount local files in CI
+    ports: []          # don't bind ports in CI
+    command: sh -lc "python manage.py migrate && pytest --cov=."
