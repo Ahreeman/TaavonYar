@@ -11,7 +11,7 @@
       <div class="card-body">
         <div class="text-muted small mb-2">
           Cooperative:
-          <a href="{% url 'coop_detail' project.cooperative.id %}">{{ project.cooperative.name }}</a>
+          <a href="{% url 'coops:coop_detail' project.cooperative.id %}">{{ project.cooperative.name }}</a>
         </div>
         <h1 class="h4">{{ project.title }}</h1>
         <p>{{ project.description|linebreaks }}</p>
@@ -36,7 +36,7 @@
 
         {% if user.is_authenticated %}
           {% if project.status == "ACTIVE" %}
-            <form method="post" action="{% url 'project_contribute' project.id %}">
+            <form method="post" action="{% url 'projects:project_contribute' project.id %}">
               {% csrf_token %}
               <label class="form-label">Amount (Tooman)</label>
               <input class="form-control mb-2" type="number" name="amount" min="1" required>

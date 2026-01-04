@@ -48,11 +48,11 @@ def switch_mode(request, mode: str):
 
     if mode == "board" and is_board:
         request.session["dashboard_mode"] = "board"
-        return redirect("board_dashboard")
+        redirect("projects:board_dashboard")
 
     if mode == "shareholder" and is_shareholder:
         request.session["dashboard_mode"] = "shareholder"
-        return redirect("shareholder_dashboard")
+        return redirect("shares:shareholder_dashboard")
 
     # invalid or user doesn't have the role
     return redirect("accounts:dashboard")
@@ -69,26 +69,27 @@ def dashboard(request):
     # If user has neither role profile, send them to shareholder dashboard anyway
     # (they can still browse; later we'll build role-creation UI)
     if not is_board and not is_shareholder:
-        return redirect("shareholder_dashboard")
+        return redirect("shares:shareholder_dashboard")
 
     # If user has only one role, go directly
     if is_board and not is_shareholder:
         request.session["dashboard_mode"] = "board"
-        return redirect("board_dashboard")
+        redirect("projects:board_dashboard")
 
     if is_shareholder and not is_board:
         request.session["dashboard_mode"] = "shareholder"
-        return redirect("shareholder_dashboard")
+        return redirect("shares:shareholder_dashboard")
 
     # User has BOTH roles
     preferred = request.session.get("dashboard_mode")
     if preferred == "board":
-        return redirect("board_dashboard")
+        return redirect("projects:board_dashboard")
     if preferred == "shareholder":
-        return redirect("shareholder_dashboard")
+        return redirect("shares:shareholder_dashboard")
 
     # No preference yet -> show switch page
     return render(request, "accounts/dashboard_switch.html")
+
 
 @login_required
 def choose_dashboard(request):
@@ -100,11 +101,11 @@ def choose_dashboard(request):
     # If only one role, just go there
     if is_board and not is_shareholder:
         request.session["dashboard_mode"] = "board"
-        return redirect("board_dashboard")
+        redirect("projects:board_dashboard")
 
     if is_shareholder and not is_board:
         request.session["dashboard_mode"] = "shareholder"
-        return redirect("shareholder_dashboard")
+        return redirect("shares:shareholder_dashboard")
 
     # If both roles -> CLEAR preference so the chooser is shown
     request.session.pop("dashboard_mode", None)

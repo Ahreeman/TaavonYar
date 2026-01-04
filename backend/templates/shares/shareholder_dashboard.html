@@ -27,7 +27,11 @@
           <div class="alert alert-info mb-0">You don’t own any shares yet.</div>
         {% endif %}
         <div class="mt-3">
-          <a class="btn btn-outline-dark" href="{% url 'marketplace' %}">Go to Marketplace</a>
+          <a class="btn btn-outline-dark" href="{% url 'shares:marketplace' %}">Go to Marketplace</a>
+        </div>
+        <div class="mt-2 d-flex gap-2">
+          <a class="btn btn-outline-dark" href="{% url 'shares:my_listings' %}">My Listings</a>
+          <a class="btn btn-outline-dark" href="{% url 'shares:my_trades' %}">My Trades</a>
         </div>
       </div>
     </div>

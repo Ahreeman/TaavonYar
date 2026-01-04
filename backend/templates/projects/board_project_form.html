@@ -1,0 +1,67 @@
+{% extends "core/base.html" %}
+{% block title %}{% if project %}Edit{% else %}Create{% endif %} Project - TaavonYar{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-3">{% if project %}Edit{% else %}Create{% endif %} Project</h1>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-muted small mb-3">
+      Cooperative: <b>{{ coop.name }}</b>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <label class="form-label">Title</label>
+      <input class="form-control mb-2" name="title" value="{% if project %}{{ project.title }}{% endif %}" required>
+
+      <label class="form-label">Description</label>
+      <textarea class="form-control mb-2" name="description" rows="5">{% if project %}{{ project.description }}{% endif %}</textarea>
+
+      <div class="row g-2">
+        <div class="col-md-6">
+          <label class="form-label">Goal amount (Tooman)</label>
+          <input class="form-control mb-2" type="number" min="1" name="goal_amount"
+                 value="{% if project %}{{ project.goal_amount }}{% else %}1{% endif %}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Shares to distribute</label>
+          <input class="form-control mb-2" type="number" min="1" name="shares_to_distribute"
+                 value="{% if project %}{{ project.shares_to_distribute }}{% else %}1{% endif %}" required>
+        </div>
+      </div>
+
+      <label class="form-label">Status</label>
+      <select class="form-select mb-2" name="status">
+        {% for key,label in status_choices %}
+          <option value="{{ key }}"
+            {% if project and project.status == key %}selected{% endif %}>
+            {{ label }}
+          </option>
+        {% endfor %}
+        {% if not project %}
+          <!-- For create, still show same choices; this is fine -->
+        {% endif %}
+      </select>
+
+      <label class="form-label">Image</label>
+      <input class="form-control mb-2" type="file" name="image" accept="image/*">
+      {% if project and project.image %}
+        <div class="text-muted small mb-2">Current: {{ project.image.name }}</div>
+      {% endif %}
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-dark" type="submit">Save</button>
+        <a class="btn btn-outline-dark" href="{% url 'projects:board_dashboard' %}">Back</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

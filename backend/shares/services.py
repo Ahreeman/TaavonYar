@@ -56,6 +56,8 @@ def buy_from_listing(*, listing: ShareListing, buyer, quantity: int) -> ShareTra
         raise ValueError("Quantity must be > 0")
     if listing.status != ShareListing.Status.ACTIVE:
         raise ValueError("Listing is not active")
+    if listing.seller_id == buyer.id:
+        raise ValueError("You cannot buy your own shares.")
     if quantity > listing.quantity_available:
         raise ValueError("Not enough quantity in listing")
 
