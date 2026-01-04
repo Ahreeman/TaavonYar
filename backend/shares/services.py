@@ -2,6 +2,7 @@ from django.db import transaction
 from django.db.models import F
 from django.db.models import Sum
 from django.utils import timezone
+from typing import Literal
 
 from coops.models import Cooperative
 from .models import ShareHolding, ShareListing, ShareTrade
@@ -134,46 +135,52 @@ def buy_primary_shares_from_coop(*, coop: Cooperative, buyer, quantity: int) -> 
 
 
 @transaction.atomic
-def buy_from_marketplace(*, coop: Cooperative, buyer, quantity: int) -> list[ShareTrade]:
+def buy_from_marketplace(*, coop: Cooperative, buyer, quantity: int, source: Literal["primary", "secondary", "auto"] = "auto") -> list[ShareTrade]:
     """
-    Buy 'quantity' shares for a cooperative at coop.price_per_share.
-    Fulfills from:
-      1) coop.available_primary_shares
-      2) active listings FIFO (excluding buyer's own listings)
-    Returns list of ShareTrade records created (one per source chunk).
+    source:
+      - "primary": only buy from coop.available_primary_shares
+      - "secondary": only buy from active listings (excluding buyer's own listings)
+      - "auto": primary first, then secondary
+    Returns list of ShareTrade rows created.
     """
     if quantity <= 0:
         raise ValueError("Quantity must be > 0")
+    if source not in ("primary", "secondary", "auto"):
+        raise ValueError("Invalid source option")
 
     trades: list[ShareTrade] = []
-
     coop = Cooperative.objects.select_for_update().get(id=coop.id)
 
-    # total available = primary + sum(listings)
-    listings_total = (
+    price_per_share = coop.price_per_share
+    remaining = quantity
+
+    # Compute secondary availability (excluding buyer’s own listings)
+    secondary_total = (
         ShareListing.objects
         .filter(cooperative=coop, status=ShareListing.Status.ACTIVE)
         .exclude(seller=buyer)
         .aggregate(total=Sum("quantity_available"))["total"]
         or 0
     )
-    total_available = int(coop.available_primary_shares) + int(listings_total)
-    if total_available < quantity:
-        raise ValueError("Not enough shares available in marketplace for this cooperative")
+    secondary_total = int(secondary_total)
+    primary_total = int(coop.available_primary_shares)
 
-    remaining = quantity
-    price_per_share = coop.price_per_share
+    if source == "primary" and primary_total < remaining:
+        raise ValueError("Not enough primary shares available from cooperative")
+    if source == "secondary" and secondary_total < remaining:
+        raise ValueError("Not enough secondary shares available from marketplace")
+    if source == "auto" and (primary_total + secondary_total) < remaining:
+        raise ValueError("Not enough shares available in marketplace")
 
-    # 1) Primary purchase
-    if coop.available_primary_shares > 0 and remaining > 0:
-        take = min(int(coop.available_primary_shares), remaining)
-
-        coop.available_primary_shares -= take
+    def take_primary(amount: int):
+        nonlocal remaining
+        if amount <= 0:
+            return
+        coop.available_primary_shares -= amount
         coop.save(update_fields=["available_primary_shares"])
 
-        # buyer holding +take
         buyer_holding = _get_holding(coop, buyer)
-        buyer_holding.quantity += take
+        buyer_holding.quantity += amount
         buyer_holding.save(update_fields=["quantity"])
 
         trades.append(
@@ -181,21 +188,23 @@ def buy_from_marketplace(*, coop: Cooperative, buyer, quantity: int) -> list[Sha
                 cooperative=coop,
                 buyer=buyer,
                 seller=None,
-                quantity=take,
+                quantity=amount,
                 price_per_share=price_per_share,
-                total_price=price_per_share * take,
+                total_price=price_per_share * amount,
             )
         )
+        remaining -= amount
 
-        remaining -= take
+    def take_secondary(amount: int):
+        nonlocal remaining
+        if amount <= 0:
+            return
 
-    # 2) Secondary listings FIFO
-    if remaining > 0:
         listings = (
             ShareListing.objects
             .select_for_update()
             .filter(cooperative=coop, status=ShareListing.Status.ACTIVE)
-            .exclude(seller=buyer)
+            .exclude(seller=buyer)  # prevent buying own shares
             .order_by("created_at", "id")
         )
 
@@ -206,12 +215,8 @@ def buy_from_marketplace(*, coop: Cooperative, buyer, quantity: int) -> list[Sha
                 continue
 
             take = min(listing.quantity_available, remaining)
-
-            # listing already reserved shares at listing time,
-            # so here we only:
-            # - decrease listing quantity
-            # - increase buyer holding
             listing.quantity_available -= take
+
             if listing.quantity_available == 0:
                 listing.status = ShareListing.Status.SOLD_OUT
                 listing.save(update_fields=["quantity_available", "status"])
@@ -235,4 +240,25 @@ def buy_from_marketplace(*, coop: Cooperative, buyer, quantity: int) -> list[Sha
 
             remaining -= take
 
+    # Fulfillment order
+    if source == "primary":
+        take_primary(remaining)
+        return trades
+
+    if source == "secondary":
+        take_secondary(remaining)
+        if remaining != 0:
+            # should not happen due to availability check, but safety:
+            raise ValueError("Not enough secondary shares available")
+        return trades
+
+    # auto: primary first then secondary
+    if remaining > 0 and coop.available_primary_shares > 0:
+        take_primary(min(int(coop.available_primary_shares), remaining))
+
+    if remaining > 0:
+        take_secondary(remaining)
+
+    if remaining != 0:
+        raise ValueError("Not enough shares available")
     return trades

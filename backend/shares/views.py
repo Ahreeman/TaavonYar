@@ -200,6 +200,7 @@ def buy_marketplace(request):
 
     coop_id = int(request.POST.get("coop_id", "0") or "0")
     qty = int(request.POST.get("quantity", "0") or "0")
+    source = (request.POST.get("source") or "auto").strip()
     coop = get_object_or_404(Cooperative, id=coop_id)
 
     if qty <= 0:
@@ -207,7 +208,7 @@ def buy_marketplace(request):
         return redirect(f"/shares/marketplace/?coop={coop.id}")
 
     try:
-        trades = buy_from_marketplace(coop=coop, buyer=request.user, quantity=qty)
+        trades = buy_from_marketplace(coop=coop, buyer=request.user, quantity=qty, source=source)
         total = sum(t.total_price for t in trades)
         messages.success(request, f"Purchase successful. Total cost: {total} Tooman.")
     except Exception as e:

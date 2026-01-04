@@ -84,12 +84,21 @@
                     <td class="text-end fw-semibold">{{ r.total }}</td>
                     <td>
                       {% if r.total > 0 %}
-                        <form method="post" action="{% url 'shares:buy_marketplace' %}" class="d-flex gap-2">
+                        <form method="post" action="{% url 'shares:buy_marketplace' %}" class="d-flex gap-2 align-items-center">
                           {% csrf_token %}
                           <input type="hidden" name="coop_id" value="{{ r.coop.id }}">
-                          <input class="form-control form-control-sm" type="number" name="quantity" min="1" max="{{ r.total }}" required>
+
+                          <select class="form-select form-select-sm" name="source" style="width: 140px;">
+                            <option value="auto" selected>Auto</option>
+                            <option value="primary">Primary</option>
+                            <option value="secondary">Secondary</option>
+                          </select>
+
+                          <input class="form-control form-control-sm" style="width: 90px;" type="number" name="quantity" min="1" max="{{ r.total }}" required>
+
                           <button class="btn btn-sm btn-dark" type="submit">Buy</button>
                         </form>
+
                       {% else %}
                         <span class="text-muted small">No shares available</span>
                       {% endif %}
