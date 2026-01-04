@@ -39,6 +39,11 @@
       {% else %}
         <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
       {% endif %}
+      <li class="nav-item">
+        <span class="navbar-text text-white-50 me-2">
+          Logged in as <b class="text-white">{{ user.username }}</b>
+        </span>
+      </li>
 
       <li class="nav-item"><a class="nav-link" href="/admin/">Admin</a></li>
     </ul>
