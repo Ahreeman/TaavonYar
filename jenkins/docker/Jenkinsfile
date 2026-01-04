@@ -15,6 +15,7 @@ pipeline {
     stage('Test') {
       steps {
         sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d'
+        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm web sh -lc "pwd && ls -la /app/backend && find /app -name manage.py -print"'
         // run tests inside the running web container
         sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T web pytest --cov=.'
       }
