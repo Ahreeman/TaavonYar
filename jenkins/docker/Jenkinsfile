@@ -16,8 +16,6 @@ pipeline {
       steps {
         sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d'
         // run tests inside the running web container
-        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T web bash -lc "pwd; ls -la; ls -la /app; python -V; test -f manage.py && echo manage.py OK || (echo manage.py MISSING; exit 1)"'
-
         sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T web pytest --cov=.'
       }
     }
