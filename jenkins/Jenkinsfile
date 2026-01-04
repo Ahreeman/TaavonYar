@@ -8,11 +8,7 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh '''
-        set -eux
-        pwd
-        tree -a -L 4
-        '''
+        sh 'ls -la'
         sh 'ls -la backend | head -n 50'
         sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml build --no-cache'
       }
