@@ -12,6 +12,7 @@ services:
       - taavonyar_pgdata:/var/lib/postgresql/data
 
   web:
+    volumes: []
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -26,7 +27,7 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       
-    volumes: []
+    
     ports:
       - "8000:8000"
     depends_on:
