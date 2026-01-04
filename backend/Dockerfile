@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
-
-# ✅ Copy the backend code into the image
+RUN pwd && ls -la
 
 CMD ["bash", "-lc", "python backend/manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
