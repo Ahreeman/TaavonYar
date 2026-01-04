@@ -14,6 +14,6 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy backend project code (build context is ./backend)
-COPY . /app
+COPY ./backend /app
 
 CMD ["bash", "-lc", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
