@@ -20,7 +20,7 @@ pipeline {
         sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d db'
 
         // Run tests as a one-off container (no need for web to stay running)
-        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm web'
+        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm web ls -la /app'
       }
     }
   }

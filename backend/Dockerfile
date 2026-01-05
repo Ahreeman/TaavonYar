@@ -17,6 +17,5 @@ COPY . /app
 
 RUN pwd && ls -la
 RUN ls -la /app
-RUN ls -la /app/backend || echo "No backend folder found here"
 
 CMD python manage.py migrate && python manage.py runserver 0.0.0.0:8000
