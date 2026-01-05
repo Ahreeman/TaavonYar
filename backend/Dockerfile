@@ -3,6 +3,8 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+WORKDIR /app
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
@@ -10,6 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY . /app
+
 RUN pwd && ls -la
+RUN ls -la /app
+RUN ls -la /app/backend || echo "No backend folder found here"
 
 CMD ["bash", "-lc", "python backend/manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
