@@ -14,13 +14,28 @@ pipeline {
       }
     }
 
-    stage('Test') {
+  stage('Test') {
       steps {
-        // Start DB only
-        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d db'
+          // 1. Start the database
+          sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d db'
+          
+          // 2. Optional: Wait for DB to be ready (if you don't have a wait script)
+          sh 'sleep 10' 
 
-        // Run tests as a one-off container (no need for web to stay running)
-        sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm web ls -la /app'
+          // 3. Run pytest
+          // We override the CMD to run pytest instead of the server
+          sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm web pytest'
+      }
+    }
+
+  stage('Deploy Locally') {
+      steps {
+          script {
+              echo "Starting application for manual testing at http://localhost:8000"
+              // Start everything in detached mode (-d)
+              // This uses the built images to run the server
+              sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d web'
+          }
       }
     }
   }
@@ -28,7 +43,6 @@ pipeline {
   post {
     always {
       sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --no-color || true'
-      sh 'docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v || true'
     }
   }
 }
