@@ -63,10 +63,10 @@ class BoardMember(models.Model):
     )
 
     # Cooperative model is in coops app; we reference it by string to avoid import cycles
-    cooperative = models.OneToOneField(
+    cooperative = models.ForeignKey(
         "coops.Cooperative",
         on_delete=models.PROTECT,
-        related_name="board_member",
+        related_name="board_members",
     )
 
     boardmember_id = models.CharField(max_length=50, unique=True)
