@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+{% block title %}Register - TaavonYar{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h1 class="h5 mb-3">Create Account</h1>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+
+          <div class="mb-2">
+            <label class="form-label" for="{{ form.full_name.id_for_label }}">Full name</label>
+            {{ form.full_name }}
+            <div class="text-danger small">{{ form.full_name.errors }}</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="{{ form.national_number.id_for_label }}">National number</label>
+            {{ form.national_number }}
+            <div class="text-danger small">{{ form.national_number.errors }}</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone number</label>
+            {{ form.phone_number }}
+            <div class="text-danger small">{{ form.phone_number.errors }}</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="{{ form.address.id_for_label }}">Address</label>
+            {{ form.address }}
+            <div class="text-danger small">{{ form.address.errors }}</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.post_id.id_for_label }}">Post ID</label>
+            {{ form.post_id }}
+            <div class="text-danger small">{{ form.post_id.errors }}</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+            {{ form.username }}
+            <div class="text-danger small">{{ form.username.errors }}</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="{{ form.password1.id_for_label }}">Password</label>
+            {{ form.password1 }}
+            <div class="text-danger small">{{ form.password1.errors }}</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+            {{ form.password2 }}
+            <div class="text-danger small">{{ form.password2.errors }}</div>
+          </div>
+
+          <button class="btn btn-dark w-100" type="submit">Register</button>
+        </form>
+
+        <div class="small mt-3">
+          Already have an account?
+          <a href="{% url 'accounts:login' %}">Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

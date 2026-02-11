@@ -1,6 +1,18 @@
+from django.contrib import messages
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
+
+from django.db import transaction
+from .forms import RegistrationForm
+
+
 from django.shortcuts import redirect, render
-from .models import Individual
+from django.views.decorators.http import require_http_methods
+
+
+import uuid
+
+from .models import Individual, Shareholder
 
 
 @login_required
@@ -48,7 +60,7 @@ def switch_mode(request, mode: str):
 
     if mode == "board" and is_board:
         request.session["dashboard_mode"] = "board"
-        redirect("projects:board_dashboard")
+        return redirect("projects:board_dashboard")  # IMPORTANT: return
 
     if mode == "shareholder" and is_shareholder:
         request.session["dashboard_mode"] = "shareholder"
@@ -66,28 +78,23 @@ def dashboard(request):
 
     is_board, is_shareholder = _role_flags(request.user)
 
-    # If user has neither role profile, send them to shareholder dashboard anyway
-    # (they can still browse; later we'll build role-creation UI)
     if not is_board and not is_shareholder:
         return redirect("shares:shareholder_dashboard")
 
-    # If user has only one role, go directly
     if is_board and not is_shareholder:
         request.session["dashboard_mode"] = "board"
-        redirect("projects:board_dashboard")
+        return redirect("projects:board_dashboard")  # IMPORTANT: return
 
     if is_shareholder and not is_board:
         request.session["dashboard_mode"] = "shareholder"
         return redirect("shares:shareholder_dashboard")
 
-    # User has BOTH roles
     preferred = request.session.get("dashboard_mode")
     if preferred == "board":
         return redirect("projects:board_dashboard")
     if preferred == "shareholder":
         return redirect("shares:shareholder_dashboard")
 
-    # No preference yet -> show switch page
     return render(request, "accounts/dashboard_switch.html")
 
 
@@ -98,16 +105,56 @@ def choose_dashboard(request):
 
     is_board, is_shareholder = _role_flags(request.user)
 
-    # If only one role, just go there
     if is_board and not is_shareholder:
         request.session["dashboard_mode"] = "board"
-        redirect("projects:board_dashboard")
+        return redirect("projects:board_dashboard")  # IMPORTANT: return
 
     if is_shareholder and not is_board:
         request.session["dashboard_mode"] = "shareholder"
         return redirect("shares:shareholder_dashboard")
 
-    # If both roles -> CLEAR preference so the chooser is shown
     request.session.pop("dashboard_mode", None)
     return render(request, "accounts/dashboard_switch.html")
 
+
+def _new_shareholder_id() -> str:
+    return f"SH-{uuid.uuid4().hex[:12].upper()}"
+
+
+@require_http_methods(["GET", "POST"])
+def register(request):
+    if request.user.is_authenticated:
+        return redirect("accounts:dashboard")
+
+    form = RegistrationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            user = form.save()
+
+            individual = Individual.objects.create(
+                user=user,
+                full_name=form.cleaned_data["full_name"],
+                national_number=form.cleaned_data["national_number"],
+                phone_number=form.cleaned_data.get("phone_number", ""),
+                address=form.cleaned_data.get("address", ""),
+                post_id=form.cleaned_data.get("post_id", ""),
+            )
+
+            Shareholder.objects.create(
+                individual=individual,
+                shareholder_id=_new_shareholder_id(),
+                bank_account_number="PENDING",
+            )
+
+        messages.success(request, "Account created. Please log in.")
+        return redirect("accounts:login")
+
+    return render(request, "accounts/register.html", {"form": form})
+
+
+
+@require_http_methods(["GET", "POST"])
+def logout_then_redirect(request):
+    logout(request)
+    return render(request, "accounts/logged_out.html")
