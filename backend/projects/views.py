@@ -5,7 +5,9 @@ from django.contrib import messages
 from accounts.models import Individual, BoardMember
 from .models import Project
 from .services import contribute_to_project, mark_project_done_and_distribute_shares
-
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+from shares.models import ShareHolding
 
 def project_list(request):
     qs = Project.objects.select_related("cooperative").order_by("-created_at")
@@ -56,7 +58,41 @@ def board_dashboard(request):
     coop = board.cooperative
     projects = coop.projects.order_by("-created_at")
 
-    return render(request, "projects/board_dashboard.html", {"coop": coop, "projects": projects})
+    holdings = (
+        ShareHolding.objects
+        .select_related("user__individual")
+        .filter(cooperative=coop, quantity__gt=0)
+        .order_by("-quantity")
+    )
+    total_held = sum(h.quantity for h in holdings) or 0
+
+    share_labels = []
+    share_values = []
+    for h in holdings:
+        ind = getattr(h.user, "individual", None)
+        share_labels.append(ind.full_name if ind else h.user.username)
+        share_values.append(float((h.quantity / total_held * 100) if total_held else 0))
+
+    project_labels = []
+    project_funded_pct = []
+    project_status = []
+    for p in projects:
+        contributed = p.total_contributed
+        pct = float((contributed / p.goal_amount * 100) if p.goal_amount else 0)
+        project_labels.append(p.title)
+        project_funded_pct.append(round(pct, 2))
+        project_status.append(p.status)
+
+    return render(request, "projects/board_dashboard.html", {
+        "coop": coop,
+        "projects": projects,
+        "share_labels_json": share_labels,
+        "share_values_json": share_values,
+        "project_labels_json": project_labels,
+        "project_funded_pct_json": project_funded_pct,
+        "project_status_json": project_status,
+    })
+
 
 
 @login_required
