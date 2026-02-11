@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy *this* context (./backend) into /app
 COPY . /app
 
-CMD ["bash", "-lc", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+RUN pwd && ls -la
+RUN ls -la /app
+
+CMD python manage.py migrate && python manage.py runserver 0.0.0.0:8000
