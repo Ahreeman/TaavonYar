@@ -101,6 +101,24 @@
   </div>
 </div>
 
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h2 class="h6 mb-2">Add Board Member by User ID</h2>
+    <form method="post" action="{% url 'coops:add_board_member' %}" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <div class="col-md-8">
+        <label class="form-label">Shareholder User ID</label>
+        <input class="form-control" name="shareholder_id" placeholder="SH-XXXXXXXXXXXX" required>
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-dark w-100" type="submit">Add to Board</button>
+      </div>
+    </form>
+    <div class="text-muted small mt-2">The user will be added as an accepted board member in your cooperative.</div>
+  </div>
+</div>
+
 <!-- Projects list -->
 <h2 class="h6">Projects</h2>
 {% if projects %}

@@ -4,6 +4,71 @@
 {% block content %}
 <h1 class="h4 mb-3">Shareholder Dashboard</h1>
 
+<div class="card mb-3">
+  <div class="card-body">
+    <h2 class="h6 mb-2">My User ID</h2>
+    {% if shareholder_id %}
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <code id="shareholder-id-text" class="px-2 py-1 border rounded bg-light">{{ shareholder_id }}</code>
+        <button id="copy-shareholder-id-btn" class="btn btn-sm btn-outline-dark" type="button">Copy ID</button>
+        <button id="share-shareholder-id-btn" class="btn btn-sm btn-dark" type="button">Share</button>
+      </div>
+      <div class="text-muted small">Share this ID with board members so they can add you to a cooperative board.</div>
+
+      {% if qr_image_url %}
+        <div class="mt-3">
+          <div class="small text-muted mb-1">QR code</div>
+          <img src="{{ qr_image_url }}" width="180" height="180" alt="QR code for shareholder ID {{ shareholder_id }}" class="border rounded">
+        </div>
+      {% endif %}
+
+      {{ share_payload|json_script:"shareholder-share-payload" }}
+      <script>
+        (function () {
+          const idText = document.getElementById("shareholder-id-text")?.textContent?.trim() || "";
+          const payloadEl = document.getElementById("shareholder-share-payload");
+          const payload = payloadEl ? JSON.parse(payloadEl.textContent) : idText;
+
+          const copyBtn = document.getElementById("copy-shareholder-id-btn");
+          if (copyBtn) {
+            copyBtn.addEventListener("click", async function () {
+              try {
+                await navigator.clipboard.writeText(idText);
+                copyBtn.textContent = "Copied!";
+                setTimeout(() => (copyBtn.textContent = "Copy ID"), 1200);
+              } catch (e) {
+                copyBtn.textContent = "Copy failed";
+                setTimeout(() => (copyBtn.textContent = "Copy ID"), 1200);
+              }
+            });
+          }
+
+          const shareBtn = document.getElementById("share-shareholder-id-btn");
+          if (shareBtn) {
+            if (navigator.share) {
+              shareBtn.addEventListener("click", async function () {
+                try {
+                  await navigator.share({
+                    title: "My TaavonYar User ID",
+                    text: payload,
+                  });
+                } catch (e) {
+                  // user canceled or unsupported payload
+                }
+              });
+            } else {
+              shareBtn.disabled = true;
+              shareBtn.title = "Browser share is not available";
+            }
+          }
+        })();
+      </script>
+    {% else %}
+      <div class="alert alert-warning mb-0">No shareholder ID found for your account.</div>
+    {% endif %}
+  </div>
+</div>
+
 
 <div class="mb-3 d-flex gap-2 flex-wrap">
   <a class="btn btn-outline-dark" href="{% url 'shares:export_my_holdings_csv' %}">Export My Holdings CSV</a>

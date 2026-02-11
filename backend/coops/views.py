@@ -8,6 +8,7 @@ from django.http import HttpResponse, Http404
 import csv
 from shares.models import ShareHolding
 from shares.models import ShareTrade
+from .services import add_board_member_by_shareholder_id
 
 
 def coop_list(request):
@@ -88,6 +89,31 @@ def _require_accepted_board(user) -> BoardMember:
     if board.status != BoardMember.AuthorityStatus.ACCEPTED:
         raise PermissionError("Board membership not accepted")
     return board
+
+
+@login_required
+def add_board_member(request):
+    if request.method != "POST":
+        return redirect("projects:board_dashboard")
+
+    shareholder_id = (request.POST.get("shareholder_id") or "").strip()
+    if not shareholder_id:
+        messages.error(request, "Please provide a shareholder user ID.")
+        return redirect("projects:board_dashboard")
+
+    try:
+        member = add_board_member_by_shareholder_id(
+            acting_user=request.user,
+            shareholder_id=shareholder_id,
+        )
+        messages.success(
+            request,
+            f"{member.individual.full_name} added as board member for {member.cooperative.name}.",
+        )
+    except Exception as e:
+        messages.error(request, f"Could not add board member: {e}")
+
+    return redirect("projects:board_dashboard")
 
 
 

@@ -5,35 +5,22 @@ from django.contrib import messages
 from coops.models import Cooperative
 from projects.models import Contribution
 from .models import ShareHolding, ShareListing, ShareTrade
-from .services import create_listing as svc_create_listing, buy_from_listing, buy_primary_shares_from_coop, buy_from_marketplace
+from .services import (
+    create_listing as svc_create_listing,
+    buy_from_listing,
+    buy_primary_shares_from_coop,
+    buy_from_marketplace,
+)
 from django.db import models
 import csv
 from django.http import HttpResponse
+from django.urls import reverse
+from urllib.parse import quote_plus
+
 
 
 
 @login_required
-def shareholder_dashboard(request):
-    holdings = (
-        ShareHolding.objects.select_related("cooperative")
-        .filter(user=request.user)
-        .order_by("cooperative__name")
-    )
-
-    contributions = (
-        Contribution.objects.select_related("project", "project__cooperative")
-        .filter(user=request.user)
-        .order_by("-created_at")[:20]
-    )
-
-    return render(
-        request,
-        "shares/shareholder_dashboard.html",
-        {"holdings": holdings, "contributions": contributions},
-    )
-
-
-login_required
 def marketplace(request):
     coop_id = request.GET.get("coop")
     coops_qs = Cooperative.objects.order_by("name")
@@ -59,8 +46,8 @@ def marketplace(request):
         rows.append({
             "coop": c,
             "primary": primary,
-            "secondary": secondary,                 # already excludes buyer listings
-            "total_for_buyer": primary + secondary, # total buyer can purchase via auto
+            "secondary": secondary,                 
+            "total_for_buyer": primary + secondary, 
         })
 
     return render(
@@ -72,28 +59,6 @@ def marketplace(request):
             "selected_coop_id": coop_id,
         },
     )
-
-
-@login_required
-def create_listing(request):
-    if request.method != "POST":
-        return redirect("marketplace")
-
-    
-    coop_id = int(request.POST.get("coop_id", "0") or "0")
-    qty = int(request.POST.get("quantity", "0") or "0")
-    if qty <= 0:
-        messages.error(request, "Quantity must be at least 1.")
-        return redirect(f"/shares/marketplace/?coop={coop.id}")
-    coop = get_object_or_404(Cooperative, id=coop_id)
-    try:
-        svc_create_listing(coop=coop, seller=request.user, quantity=qty)
-    except Exception:
-        # keep it simple for now; later we show friendly messages
-        pass
-
-    return redirect(f"{'/shares/marketplace/'}?coop={coop.id}")
-
 
 @login_required
 def buy_listing(request, listing_id: int):
@@ -123,12 +88,11 @@ def buy_primary(request):
 
     coop_id = int(request.POST.get("coop_id", "0") or "0")
     qty = int(request.POST.get("quantity", "0") or "0")
+    coop = get_object_or_404(Cooperative, id=coop_id)
+
     if qty <= 0:
         messages.error(request, "Quantity must be at least 1.")
         return redirect(f"/shares/marketplace/?coop={coop.id}")
-
-
-    coop = get_object_or_404(Cooperative, id=coop_id)
 
     try:
         buy_primary_shares_from_coop(coop=coop, buyer=request.user, quantity=qty)
@@ -137,6 +101,8 @@ def buy_primary(request):
         messages.error(request, f"Could not buy primary shares: {e}")
 
     return redirect(f"/shares/marketplace/?coop={coop.id}")
+
+
 
 @login_required
 def create_listing(request):
@@ -243,6 +209,20 @@ def shareholder_dashboard(request):
     portfolio_labels = [h.cooperative.name for h in holdings if h.quantity > 0]
     portfolio_values = [h.quantity for h in holdings if h.quantity > 0]
 
+    shareholder_profile = getattr(getattr(request.user, "individual", None), "shareholder_profile", None)
+    shareholder_id = shareholder_profile.shareholder_id if shareholder_profile else ""
+    share_page_url = request.build_absolute_uri(reverse("shares:shareholder_dashboard"))
+    share_text = (
+        f"My TaavonYar shareholder ID: {shareholder_id}\n"
+        f"Use this ID to add me as a board member: {shareholder_id}\n"
+        f"Dashboard: {share_page_url}"
+    ) if shareholder_id else ""
+    qr_image_url = (
+        f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={quote_plus(share_text)}"
+        if share_text else ""
+    )
+
+
     return render(
         request,
         "shares/shareholder_dashboard.html",
@@ -251,6 +231,10 @@ def shareholder_dashboard(request):
             "contributions": contributions,
             "portfolio_labels_json": portfolio_labels,
             "portfolio_values_json": portfolio_values,
+            "shareholder_id": shareholder_id,
+            "share_payload": share_text,
+            "qr_image_url": qr_image_url,
+
         },
     )
 
