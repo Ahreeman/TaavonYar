@@ -4,11 +4,57 @@
 {% block content %}
 <h1 class="h4 mb-3">Shareholder Dashboard</h1>
 
+
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a class="btn btn-outline-dark" href="{% url 'shares:export_my_holdings_csv' %}">Export My Holdings CSV</a>
+  <a class="btn btn-outline-dark" href="{% url 'shares:export_my_contributions_csv' %}">Export My Contributions CSV</a>
+  <a class="btn btn-outline-dark" href="{% url 'shares:export_my_trade_logs_csv' %}">Export My Trade Logs CSV</a>
+</div>
+
+
 <div class="row g-3">
   <div class="col-lg-6">
     <div class="card">
       <div class="card-body">
-        <h2 class="h6">My Portfolio</h2>
+        <h2 class="h6">My Portfolio</h2>   
+        
+        
+        <div class="card mb-3">
+          <div class="card-body">
+            <h2 class="h6 mb-3">My Portfolio Distribution (by share count)</h2>
+            <canvas id="portfolioPieChart" height="120"></canvas>
+            <div id="portfolioEmptyMsg" class="text-muted small mt-2 d-none">
+              No shares yet to visualize.
+            </div>
+          </div>
+        </div>
+
+        {{ portfolio_labels_json|default:"[]"|json_script:"portfolio-labels-data" }}
+        {{ portfolio_values_json|default:"[]"|json_script:"portfolio-values-data" }}
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+          const portfolioLabels = JSON.parse(document.getElementById("portfolio-labels-data").textContent);
+          const portfolioValues = JSON.parse(document.getElementById("portfolio-values-data").textContent);
+
+          const ctx = document.getElementById("portfolioPieChart");
+          const emptyMsg = document.getElementById("portfolioEmptyMsg");
+
+          if (ctx && typeof Chart !== "undefined" && portfolioLabels.length && portfolioValues.length) {
+            new Chart(ctx, {
+              type: "pie",
+              data: {
+                labels: portfolioLabels,
+                datasets: [{ data: portfolioValues }]
+              },
+              options: { plugins: { legend: { position: "bottom" } } }
+            });
+          } else if (emptyMsg) {
+            emptyMsg.classList.remove("d-none");
+          }
+        </script>
+        
+
         {% if holdings %}
           <div class="list-group">
             {% for h in holdings %}

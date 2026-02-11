@@ -6,6 +6,10 @@ from coops.models import Cooperative
 from projects.models import Contribution
 from .models import ShareHolding, ShareListing, ShareTrade
 from .services import create_listing as svc_create_listing, buy_from_listing, buy_primary_shares_from_coop, buy_from_marketplace
+from django.db import models
+import csv
+from django.http import HttpResponse
+
 
 
 @login_required
@@ -220,3 +224,122 @@ def buy_marketplace(request):
         messages.error(request, f"Could not buy shares: {e}")
 
     return redirect(f"/shares/marketplace/?coop={coop.id}")
+
+@login_required
+def shareholder_dashboard(request):
+    holdings = (
+        ShareHolding.objects.select_related("cooperative")
+        .filter(user=request.user)
+        .order_by("cooperative__name")
+    )
+
+    contributions = (
+        Contribution.objects.select_related("project", "project__cooperative")
+        .filter(user=request.user)
+        .order_by("-created_at")[:20]
+    )
+
+    # chart data
+    portfolio_labels = [h.cooperative.name for h in holdings if h.quantity > 0]
+    portfolio_values = [h.quantity for h in holdings if h.quantity > 0]
+
+    return render(
+        request,
+        "shares/shareholder_dashboard.html",
+        {
+            "holdings": holdings,
+            "contributions": contributions,
+            "portfolio_labels_json": portfolio_labels,
+            "portfolio_values_json": portfolio_values,
+        },
+    )
+
+
+@login_required
+def export_my_holdings_csv(request):
+    holdings = (
+        ShareHolding.objects.select_related("cooperative")
+        .filter(user=request.user)
+        .order_by("cooperative__name")
+    )
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="my_holdings.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["cooperative", "share_count", "price_per_share", "share_worth_tooman"])
+
+    for h in holdings:
+        worth = h.quantity * h.cooperative.price_per_share
+        writer.writerow([h.cooperative.name, h.quantity, h.cooperative.price_per_share, worth])
+
+    return response
+
+
+@login_required
+def export_my_contributions_csv(request):
+    contributions = (
+        Contribution.objects.select_related("project", "project__cooperative")
+        .filter(user=request.user)
+        .order_by("-created_at")
+    )
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="my_contributions.csv"'
+    writer = csv.writer(response)
+    writer.writerow([
+        "created_at", "cooperative", "project", "amount_tooman",
+        "project_status", "allocated_shares"
+    ])
+
+    for c in contributions:
+        writer.writerow([
+            c.created_at.isoformat(),
+            c.project.cooperative.name,
+            c.project.title,
+            c.amount,
+            c.project.status,
+            c.allocated_shares if c.allocated_shares is not None else "",
+        ])
+
+    return response
+
+
+@login_required
+def export_my_trade_logs_csv(request):
+    trades = (
+        ShareTrade.objects.select_related("cooperative", "seller__individual", "buyer__individual")
+        .filter(models.Q(buyer=request.user) | models.Q(seller=request.user))
+        .order_by("-created_at")
+    )
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="my_trade_logs.csv"'
+    writer = csv.writer(response)
+    writer.writerow([
+        "created_at", "cooperative", "direction",
+        "counterparty", "quantity", "price_per_share", "total_price"
+    ])
+
+    for t in trades:
+        if t.buyer_id == request.user.id:
+            direction = "BUY"
+            if t.seller is None:
+                counterparty = "COOP_PRIMARY"
+            else:
+                counterparty = getattr(t.seller.individual, "full_name", t.seller.username)
+        else:
+            direction = "SELL"
+            counterparty = getattr(t.buyer.individual, "full_name", t.buyer.username)
+
+        writer.writerow([
+            t.created_at.isoformat(),
+            t.cooperative.name,
+            direction,
+            counterparty,
+            t.quantity,
+            t.price_per_share,
+            t.total_price,
+        ])
+
+    return response
+

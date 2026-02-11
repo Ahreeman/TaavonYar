@@ -58,6 +58,13 @@ def board_dashboard(request):
     coop = board.cooperative
     projects = coop.projects.order_by("-created_at")
 
+    top_shareholders = (
+        ShareHolding.objects
+        .select_related("user__individual")
+        .filter(cooperative=coop, quantity__gt=0)
+        .order_by("-quantity")[:10]
+    )
+
     holdings = (
         ShareHolding.objects
         .select_related("user__individual")
@@ -91,6 +98,7 @@ def board_dashboard(request):
         "project_labels_json": project_labels,
         "project_funded_pct_json": project_funded_pct,
         "project_status_json": project_status,
+        "top_shareholders": top_shareholders,
     })
 
 
@@ -200,3 +208,5 @@ def board_project_edit(request, project_id: int):
         return redirect("projects:board_dashboard")
 
     return render(request, "projects/board_project_form.html", {"coop": board.cooperative, "project": project, "status_choices": Project.Status.choices})
+
+

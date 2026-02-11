@@ -65,6 +65,42 @@
   </div>
 </div>
 
+<!-- Top Shareholder list -->
+<div class="card mb-3">
+  <div class="card-body">
+    <h2 class="h6 mb-3">Top Shareholders</h2>
+    {% if top_shareholders %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>National ID</th>
+              <th class="text-end">Shares</th>
+              <th class="text-end">Share Worth (Tooman)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in top_shareholders %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ h.user.individual.full_name|default:h.user.username }}</td>
+                <td>{{ h.user.individual.national_number|default:"-" }}</td>
+                <td class="text-end">{{ h.quantity }}</td>
+                <td class="text-end">{{ h.quantity|add:0|floatformat:0 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="text-muted small">Share worth = shares × cooperative price/share.</div>
+    {% else %}
+      <div class="alert alert-info mb-0">No shareholders with holdings yet.</div>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Projects list -->
 <h2 class="h6">Projects</h2>
 {% if projects %}

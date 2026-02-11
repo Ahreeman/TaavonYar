@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import shareholder_dashboard, marketplace, create_listing, buy_listing, buy_primary, my_listings, cancel_listing, my_trades, buy_marketplace
+from .views import *
 
 app_name = "shares"
 
@@ -16,4 +16,8 @@ urlpatterns = [
     path("my-listings/<int:listing_id>/cancel/", cancel_listing, name="cancel_listing"),
     path("my-trades/", my_trades, name="my_trades"),
     path("marketplace/buy/", buy_marketplace, name="buy_marketplace"),
+    path("export/holdings/", export_my_holdings_csv, name="export_my_holdings_csv"),
+    path("export/contributions/", export_my_contributions_csv, name="export_my_contributions_csv"),
+    path("export/trades/", export_my_trade_logs_csv, name="export_my_trade_logs_csv"),
+
 ]
